@@ -1,0 +1,18 @@
+/**
+ * @file config.h.example
+ * @brief 設定情報を記述するヘッダファイル
+ *
+ * @details 環境に合わせて、ファイル名をconfig.hにリネームして利用してください（config.hはgitignoreされています）
+ */
+
+#pragma once
+
+/** WiFiのSSID */
+#define WIFI_SSID "................."
+/** WiFiのパスワード */
+#define WIFI_PASSWORD "................."
+
+/** MQTTのホスト */
+#define MQTT_HOST "XXX.XXX.XXX.XXX"
+/** MQTTのポート番号 */
+#define MQTT_PORT 1883
