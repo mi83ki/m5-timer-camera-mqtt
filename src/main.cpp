@@ -9,14 +9,16 @@
 #include "M5TimerCAM.h"
 #include "MQTTClientESP32.h"
 #include "WiFiESP32.h"
+#include "base64.hpp"
 #include "config.h"
 
 WiFiESP32 wifi = WiFiESP32(WIFI_SSID, WIFI_PASSWORD);
 MQTTClientESP32 *mqttClient;
+unsigned char base64Image[MQTT_BUFFER_SIZE];
 
 /**
  * @brief 初期化
- * 
+ *
  */
 void setup() {
   TimerCAM.begin();
@@ -38,12 +40,12 @@ void setup() {
     Serial.println("WiFi Init Fail");
     ESP.restart();
   }
-  mqttClient = new MQTTClientESP32(MQTT_HOST, MQTT_PORT);
+  mqttClient = new MQTTClientESP32(MQTT_HOST, MQTT_PORT, MQTT_BUFFER_SIZE);
 }
 
 /**
  * @brief 繰り返し処理
- * 
+ *
  */
 void loop() {
   static uint32_t last = millis();
@@ -56,10 +58,15 @@ void loop() {
       cnt = 0;
     }
     if (TimerCAM.Camera.get()) {
-      Serial.printf("pic size: %d\n", TimerCAM.Camera.fb->len);
-      TimerCAM.Camera.free();
       cnt++;
-      mqttClient->publish("test", String(TimerCAM.Camera.fb->len));
+      unsigned int base64Length = encode_base64(
+          TimerCAM.Camera.fb->buf, TimerCAM.Camera.fb->len, base64Image);
+      String pubTopic =
+          "m5timercamera/1234/" + mqttClient->getClientId() + "/image";
+      mqttClient->publish(pubTopic, (char *)base64Image, base64Length);
+      logger.debug("send topic: " + pubTopic +
+                   ", base64 length: " + String(base64Length));
+      TimerCAM.Camera.free();
     }
   }
 }

@@ -19,12 +19,14 @@
 
 class MQTTClientESP32 {
 public:
-  MQTTClientESP32(String, uint16_t);
+  MQTTClientESP32(String, uint16_t, uint16_t bufferSize = 0);
   ~MQTTClientESP32();
   PubSubClient *getMQTTClient(void) { return &_mqttClient; };
   bool healthCheck(void);
   bool publish(String topic, String payload);
+  bool publish(String topic, const char *payload, int plength);
   bool subscribe(String topic);
+  String getClientId(void) { return _clientId; };
 
 private:
   bool reconnect(void);
@@ -34,4 +36,5 @@ private:
   PubSubClient _mqttClient;
   String _mqttHost;
   uint16_t _mqttPort;
+  String _clientId;
 };

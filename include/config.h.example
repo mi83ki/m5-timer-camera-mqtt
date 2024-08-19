@@ -16,3 +16,5 @@
 #define MQTT_HOST "XXX.XXX.XXX.XXX"
 /** MQTTのポート番号 */
 #define MQTT_PORT 1883
+/** MQTTのバッファサイズ(デフォルトは256バイト) */
+#define MQTT_BUFFER_SIZE 16384
