@@ -43,6 +43,7 @@ MQTTClientESP32::MQTTClientESP32(String mqttHost, uint16_t mqttPort,
 MQTTClientESP32::~MQTTClientESP32() {}
 
 bool MQTTClientESP32::reconnect() {
+  logger.info("MQTTClientESP32.reconnect(): start");
   if (_mqttClient.connect(_clientId.c_str())) {
     // // Once connected, publish an announcement...
     // _mqttClient.publish("outTopic","hello world");
@@ -66,6 +67,7 @@ bool MQTTClientESP32::healthCheck(void) {
       // Attempt to reconnect
       if (reconnect()) {
         _lastReconnectAttempt = 0;
+        logger.info("MQTTClientESP32.healthCheck(): success to reconnect");
         return true;
       }
     }
