@@ -17,6 +17,8 @@ WiFiESP32 wifi = WiFiESP32(WIFI_SSID, WIFI_PASSWORD);
 MQTTClientESP32 *mqttClient;
 unsigned char base64Image[32768];
 Timer cameraTimer(200);
+/** 画像更新フラグ */
+bool isUpdatedImage = false;
 
 /**
  * @brief Get the Default Mac Address object
@@ -36,6 +38,38 @@ String getDefaultMacAddress(String sepChar = ":") {
     mac = buffer;
   }
   return mac;
+}
+
+/** @brief デフォルトのMACアドレス */
+String DEFAULT_MAC_ADDRESS = getDefaultMacAddress("-");
+
+/**
+ * @brief MQTT送信用Task
+ *
+ * 画像更新時、MQTTブローカーに Pub する
+ *
+ * @param[in] pvParameter Taskのパラメータ
+ * @return なし
+ */
+void taskMQTT(void *) {
+  mqttClient = new MQTTClientESP32(MQTT_HOST, MQTT_PORT, MQTT_BUFFER_SIZE);
+  static uint32_t last = millis();
+  while (true) {
+    if (wifi.healthCheck() && mqttClient->healthCheck()) {
+      if (isUpdatedImage) {
+        isUpdatedImage = false;
+        uint32_t now = millis();
+        float fps = 1000.0f / (float)(now - last);
+        last = now;
+        String pubTopic =
+            "m5timercamera/1234/" + DEFAULT_MAC_ADDRESS + "/image";
+        String payload = "{\"data\":\"" + String((char *)base64Image) + "\"}";
+        mqttClient->publish(pubTopic, payload);
+        logger.debug("send topic: " + pubTopic + ", fps: " + String(fps, 2));
+      }
+    }
+    vTaskDelay(1);
+  }
 }
 
 /**
@@ -65,30 +99,27 @@ void setup() {
     logger.info("WiFi Init Fail");
     ESP.restart();
   }
-  mqttClient = new MQTTClientESP32(MQTT_HOST, MQTT_PORT, MQTT_BUFFER_SIZE);
+
+  // MQTT送信用Taskを起動 Core 0
+  xTaskCreatePinnedToCore(taskMQTT, "taskMQTT", 4096, NULL, 1, NULL, 0);
 }
 
 /**
- * @brief 繰り返し処理
+ * @brief 繰り返し処理 Core 1
  *
  */
 void loop() {
   static uint32_t last = millis();
-
-  if (wifi.healthCheck() && mqttClient->healthCheck()) {
-    if (cameraTimer.isCycleTime() && TimerCAM.Camera.get()) {
-      uint32_t now = millis();
-      float fps = 1000.0f / (float)(now - last);
-      last = now;
-      unsigned int base64Length = encode_base64(
-          TimerCAM.Camera.fb->buf, TimerCAM.Camera.fb->len, base64Image);
-      String pubTopic =
-          "m5timercamera/1234/" + getDefaultMacAddress("-") + "/image";
-      String payload = "{\"data\":\"" + String((char *)base64Image) + "\"}";
-      mqttClient->publish(pubTopic, payload);
-      logger.debug("send topic: " + pubTopic + ", base64 length: " +
-                   String(base64Length) + ", fps: " + String(fps, 2));
-      TimerCAM.Camera.free();
-    }
+  if (cameraTimer.isCycleTime() && TimerCAM.Camera.get()) {
+    uint32_t now = millis();
+    float fps = 1000.0f / (float)(now - last);
+    last = now;
+    unsigned int base64Length = encode_base64(
+        TimerCAM.Camera.fb->buf, TimerCAM.Camera.fb->len, base64Image);
+    isUpdatedImage = true;
+    logger.debug("base64 length: " + String(base64Length) +
+                 ", fps: " + String(fps, 2));
+    TimerCAM.Camera.free();
   }
+  vTaskDelay(1);
 }
