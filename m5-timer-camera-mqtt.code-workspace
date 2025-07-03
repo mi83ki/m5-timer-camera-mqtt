@@ -16,7 +16,15 @@
 			"tuple": "cpp",
 			"utility": "cpp",
 			"string": "cpp",
-			"chrono": "cpp"
+			"chrono": "cpp",
+			"deque": "cpp",
+			"unordered_map": "cpp",
+			"unordered_set": "cpp",
+			"vector": "cpp",
+			"string_view": "cpp",
+			"initializer_list": "cpp",
+			"*.cpp__": "cpp",
+			"*.h__": "cpp"
 		}
 	}
 }
