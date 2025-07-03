@@ -14,32 +14,50 @@ const size_t SwitchBotController::pressCommandLength = sizeof(pressCommand);
 
 
 // SwitchBotController の実装
-SwitchBotController::SwitchBotController(const char* deviceAddress) 
-    : addressString(deviceAddress), pClient(nullptr), pRemoteCharacteristic(nullptr), 
-      deviceConnected(false), scanCompleted(false) {
-    targetAddress = NimBLEAddress(std::string(deviceAddress), BLE_ADDR_RANDOM);
-    Serial.printf("SwitchBotController created for device: %s\n", deviceAddress);
+SwitchBotController::SwitchBotController() 
+    : pClient(nullptr), pRemoteCharacteristic(nullptr), deviceConnected(false) {
+    Serial.println("SwitchBotController created");
 }
 
 SwitchBotController::~SwitchBotController() {
-    if (pClient != nullptr && pClient->isConnected()) {
-        pClient->disconnect();
+    if (pClient != nullptr) {
+        if (pClient->isConnected()) {
+            pClient->disconnect();
+        }
+        NimBLEDevice::deleteClient(pClient);
+        pClient = nullptr;
     }
-    // NimBLEClientは自動的に管理されるため、deleteは不要
-    pClient = nullptr;
 }
 
-bool SwitchBotController::connectAndSendCommand(uint8_t* command, size_t commandLength) {
-    Serial.println("Connecting to SwitchBot...");
+bool SwitchBotController::connectAndSendCommand(const char* deviceAddress, uint8_t* command, size_t commandLength) {
+    Serial.printf("Connecting to SwitchBot: %s\n", deviceAddress);
 
-    // クライアント作成
+    // デバイスアドレスを作成
+    NimBLEAddress targetAddress = NimBLEAddress(std::string(deviceAddress), BLE_ADDR_RANDOM);
+
+    // 既存のクライアントがあれば切断して削除
+    if (pClient != nullptr) {
+        if (pClient->isConnected()) {
+            pClient->disconnect();
+        }
+        NimBLEDevice::deleteClient(pClient);
+        pClient = nullptr;
+    }
+
+    // 新しいクライアント作成
     pClient = NimBLEDevice::createClient();
+    if (pClient == nullptr) {
+        Serial.println("Failed to create BLE client");
+        return false;
+    }
     Serial.println("Created BLE client");
 
     try {
         // デバイスに接続
         if (!pClient->connect(targetAddress)) {
             Serial.println("Failed to connect to device");
+            NimBLEDevice::deleteClient(pClient);
+            pClient = nullptr;
             return false;
         }
 
@@ -51,6 +69,9 @@ bool SwitchBotController::connectAndSendCommand(uint8_t* command, size_t command
         if (pRemoteService == nullptr) {
             Serial.println("Failed to find service");
             pClient->disconnect();
+            NimBLEDevice::deleteClient(pClient);
+            pClient = nullptr;
+            deviceConnected = false;
             return false;
         }
         Serial.println("Found service");
@@ -60,6 +81,9 @@ bool SwitchBotController::connectAndSendCommand(uint8_t* command, size_t command
         if (pRemoteCharacteristic == nullptr) {
             Serial.println("Failed to find characteristic");
             pClient->disconnect();
+            NimBLEDevice::deleteClient(pClient);
+            pClient = nullptr;
+            deviceConnected = false;
             return false;
         }
         Serial.println("Found characteristic");
@@ -72,8 +96,10 @@ bool SwitchBotController::connectAndSendCommand(uint8_t* command, size_t command
         // 少し待機
         delay(1000);
 
-        // 切断
+        // 切断とクリーンアップ
         pClient->disconnect();
+        NimBLEDevice::deleteClient(pClient);
+        pClient = nullptr;
         deviceConnected = false;
         Serial.println("Disconnected");
 
@@ -82,25 +108,26 @@ bool SwitchBotController::connectAndSendCommand(uint8_t* command, size_t command
     } catch (std::exception& e) {
         Serial.print("Exception occurred: ");
         Serial.println(e.what());
-        if (pClient->isConnected()) {
+        if (pClient != nullptr && pClient->isConnected()) {
             pClient->disconnect();
         }
+        if (pClient != nullptr) {
+            NimBLEDevice::deleteClient(pClient);
+            pClient = nullptr;
+        }
+        deviceConnected = false;
         return false;
     }
 }
 
 
-bool SwitchBotController::press() {
-    Serial.printf("=== SwitchBot Press Operation for %s ===\n", addressString.c_str());
+bool SwitchBotController::press(const char* deviceAddress) {
+    Serial.printf("=== SwitchBot Press Operation for %s ===\n", deviceAddress);
 
     // 直接接続してコマンド送信
-    return connectAndSendCommand(const_cast<uint8_t*>(pressCommand), pressCommandLength);
+    return connectAndSendCommand(deviceAddress, const_cast<uint8_t*>(pressCommand), pressCommandLength);
 }
 
 bool SwitchBotController::isConnected() const {
     return deviceConnected;
-}
-
-const char* SwitchBotController::getAddress() const {
-    return addressString.c_str();
 }
