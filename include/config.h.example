@@ -18,3 +18,7 @@
 #define MQTT_PORT 1883
 /** MQTTのバッファサイズ(デフォルトは256バイト) */
 #define MQTT_BUFFER_SIZE 32768
+
+/** SwitchBot設定 */
+#define SWITCHBOT_DEVICE_1 "dd:42:00:46:42:6d"
+#define SWITCHBOT_DEVICE_2 "dd:42:00:86:2c:54"
