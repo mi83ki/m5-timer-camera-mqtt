@@ -8,9 +8,7 @@
 
 #pragma once
 
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEClient.h>
+#include <NimBLEDevice.h>
 
 /**
  * @class SwitchBotController
@@ -19,34 +17,24 @@
 class SwitchBotController {
 private:
     // SwitchBot BLE設定
-    static const BLEUUID serviceUUID;
-    static const BLEUUID charUUID;
+    static const NimBLEUUID serviceUUID;
+    static const NimBLEUUID charUUID;
     static const uint8_t pressCommand[];
     static const size_t pressCommandLength;
     
     // デバイス固有の設定
-    BLEAddress targetAddress;
+    NimBLEAddress targetAddress;
     std::string addressString;
     
     // BLE接続関連
-    BLEClient* pClient;
-    BLERemoteCharacteristic* pRemoteCharacteristic;
+    NimBLEClient* pClient;
+    NimBLERemoteCharacteristic* pRemoteCharacteristic;
     bool deviceConnected;
     bool scanCompleted;
     
     // プライベートメソッド
     bool connectAndSendCommand(uint8_t* command, size_t commandLength);
-    bool scanForSwitchBot();
     
-    // スキャン結果処理用内部クラス
-    class AdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
-    private:
-        SwitchBotController* controller;
-        
-    public:
-        AdvertisedDeviceCallbacks(SwitchBotController* ctrl);
-        void onResult(BLEAdvertisedDevice advertisedDevice) override;
-    };
     
 public:
     /**
