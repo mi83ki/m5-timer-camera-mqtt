@@ -18,7 +18,10 @@
 #include "SwitchBotController.h"
 #include "config.h"
 
-WiFiESP32 wifi = WiFiESP32(WIFI_SSID, WIFI_PASSWORD);
+#define ESP32_RTOS
+#include "OTA.h"
+
+WiFiESP32 *wifi;
 MQTTClientESP32 *mqttClient;
 unsigned char base64Image[32768];
 Timer cameraTimer(500);
@@ -40,7 +43,7 @@ void taskMQTT(void *) {
   mqttClient = new MQTTClientESP32(MQTT_HOST, MQTT_PORT, MQTT_BUFFER_SIZE);
   static uint32_t last = millis();
   while (true) {
-    if (wifi.healthCheck() && mqttClient->healthCheck()) {
+    if (wifi->healthCheck() && mqttClient->healthCheck()) {
       if (isUpdatedImage) {
         isUpdatedImage = false;
         uint32_t now = millis();
@@ -68,6 +71,14 @@ void setup() {
     logger.error("Camera Init Fail");
     return;
   }
+
+#ifdef USE_STATIC_IP
+  setupOTA("bumble-eye-sensor", WIFI_SSID, WIFI_PASSWORD, STATIC_IP, GATEWAY,
+           SUBNET);
+#else
+  setupOTA("bumble-eye-sensor", WIFI_SSID, WIFI_PASSWORD);
+#endif
+
   logger.info("Camera Init Success");
   TimerCAM.Camera.sensor->set_pixformat(TimerCAM.Camera.sensor, PIXFORMAT_JPEG);
   TimerCAM.Camera.sensor->set_framesize(TimerCAM.Camera.sensor, FRAMESIZE_VGA);
@@ -80,9 +91,10 @@ void setup() {
       "MAC address of Wi-Fi Station (using 'esp_efuse_mac_get_default'): " +
       getDefaultMacAddress("-"));
 
-  // WiFi接続
-  if (!wifi.begin()) {
-    logger.info("WiFi Init Fail");
+  // WiFi接続の確立
+  wifi = new WiFiESP32(WIFI_SSID, WIFI_PASSWORD);
+  if (!wifi->begin()) {
+    logger.error(F("setup(): WiFi Init Fail"));
     ESP.restart();
   }
 
@@ -103,8 +115,9 @@ void setup() {
  *
  */
 void loop() {
-  static Timer timer = Timer(5000);
+  static Timer timer = Timer(60000);
   static bool step = false;
+  static float last = 0.0f;
 
   if (cameraTimer.isCycleTime() && TimerCAM.Camera.get()) {
     uint32_t now = millis();
@@ -120,13 +133,13 @@ void loop() {
 
   if (timer.isCycleTime()) {
     // SwitchBotコントローラーの更新
-    if (step) {
-      switchBotController.press(SWITCHBOT_DEVICE_1);
-      step = false;
-    } else {
-      switchBotController.press(SWITCHBOT_DEVICE_2);
-      step = true;
-    }
+    // if (step) {
+    //   switchBotController.press(SWITCHBOT_DEVICE_1);
+    //   step = false;
+    // } else {
+    //   switchBotController.press(SWITCHBOT_DEVICE_2);
+    //   step = true;
+    // }
   }
 
   vTaskDelay(1);
