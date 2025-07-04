@@ -115,7 +115,7 @@ void setup() {
  *
  */
 void loop() {
-  static Timer timer = Timer(60000);
+  static Timer timer = Timer(10000);
   static bool step = false;
   static float last = 0.0f;
 
@@ -132,14 +132,13 @@ void loop() {
   }
 
   if (timer.isCycleTime()) {
-    // SwitchBotコントローラーの更新
-    // if (step) {
-    //   switchBotController.press(SWITCHBOT_DEVICE_1);
-    //   step = false;
-    // } else {
-    //   switchBotController.press(SWITCHBOT_DEVICE_2);
-    //   step = true;
-    // }
+    if (step) {
+      switchBotController.press(SWITCHBOT_DEVICE_1);
+      step = false;
+    } else {
+      switchBotController.press(SWITCHBOT_DEVICE_2);
+      step = true;
+    }
   }
 
   vTaskDelay(1);
