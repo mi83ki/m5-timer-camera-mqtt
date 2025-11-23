@@ -15,7 +15,6 @@
 
 #include <base64.hpp>
 
-#include "SwitchBotController.h"
 #include "config.h"
 
 #define ESP32_RTOS
@@ -27,9 +26,6 @@ unsigned char base64Image[32768];
 Timer cameraTimer(500);
 /** 画像更新フラグ */
 bool isUpdatedImage = false;
-
-// SwitchBotコントローラーのインスタンス
-SwitchBotController switchBotController;
 
 /**
  * @brief MQTT送信用Task
@@ -104,9 +100,7 @@ void setup() {
   delay(3000);
   // BLE初期化
   logger.info("Initializing BLE...");
-  NimBLEDevice::init("M5TimerCAM-SwitchBot");
-  logger.info("SwitchBot Device 1: " + String(SWITCHBOT_DEVICE_1));
-  logger.info("SwitchBot Device 2: " + String(SWITCHBOT_DEVICE_2));
+  NimBLEDevice::init("M5TimerCAM");
   logger.info("Setup completed");
 }
 
@@ -129,16 +123,6 @@ void loop() {
     logger.debug("base64 length: " + String(base64Length) +
                  ", fps: " + String(fps, 2));
     TimerCAM.Camera.free();
-  }
-
-  if (timer.isCycleTime()) {
-    if (step) {
-      switchBotController.press(SWITCHBOT_DEVICE_1);
-      step = false;
-    } else {
-      switchBotController.press(SWITCHBOT_DEVICE_2);
-      step = true;
-    }
   }
 
   vTaskDelay(1);

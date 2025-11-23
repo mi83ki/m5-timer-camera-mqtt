@@ -22,3 +22,19 @@
 /** SwitchBot設定 */
 #define SWITCHBOT_DEVICE_1 "dd:42:00:46:42:6d"
 #define SWITCHBOT_DEVICE_2 "dd:42:00:86:2c:54"
+
+/** OTA書き込み用 */
+#define USE_STATIC_IP
+
+#ifdef USE_STATIC_IP
+// #define STATIC_IP "192.168.2.2"  // DFRobot製pHセンサー_001
+// #define STATIC_IP "192.168.2.3"  // DFRobot製ECセンサー_001
+// #define STATIC_IP "192.168.2.4"  // 7in1土壌センサー_001
+// #define STATIC_IP "192.168.2.5"  // CO2センサー_002
+// #define STATIC_IP "192.168.2.6"  // ハンディーセンサー_001（ラボ設置）
+#define STATIC_IP "192.168.1.7"  // M5TimerCamera_001（ラボ設置）
+// #define STATIC_IP "192.168.2.8"  // 中華製pHセンサー_001（ラボ設置）
+// #define STATIC_IP "192.168.2.9"  // 中華製ECセンサー_001（ラボ設置）
+#define GATEWAY "192.168.1.1"
+#define SUBNET "255.255.255.0"
+#endif
