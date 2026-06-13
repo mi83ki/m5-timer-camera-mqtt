@@ -17,6 +17,10 @@
 
 #include "config.h"
 
+#ifndef CAMERA_FRAME_SIZE
+#define CAMERA_FRAME_SIZE FRAMESIZE_VGA
+#endif
+
 #define ESP32_RTOS
 #include "OTA.h"
 
@@ -77,7 +81,7 @@ void setup() {
 
   logger.info("Camera Init Success");
   TimerCAM.Camera.sensor->set_pixformat(TimerCAM.Camera.sensor, PIXFORMAT_JPEG);
-  TimerCAM.Camera.sensor->set_framesize(TimerCAM.Camera.sensor, FRAMESIZE_VGA);
+  TimerCAM.Camera.sensor->set_framesize(TimerCAM.Camera.sensor, CAMERA_FRAME_SIZE);
   TimerCAM.Camera.sensor->set_vflip(TimerCAM.Camera.sensor, 1);
   TimerCAM.Camera.sensor->set_hmirror(TimerCAM.Camera.sensor, 0);
 
