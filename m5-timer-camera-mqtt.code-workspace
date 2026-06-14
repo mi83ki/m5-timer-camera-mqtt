@@ -25,6 +25,7 @@
 			"initializer_list": "cpp",
 			"*.cpp__": "cpp",
 			"*.h__": "cpp"
-		}
+		},
+		"svn.ignoreMissingSvnWarning": true
 	}
 }

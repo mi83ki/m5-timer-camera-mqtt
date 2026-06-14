@@ -26,7 +26,7 @@
 
 WiFiESP32 *wifi;
 MQTTClientESP32 *mqttClient;
-unsigned char base64Image[32768];
+unsigned char *base64Image = nullptr;
 Timer cameraTimer(500);
 /** 画像更新フラグ */
 bool isUpdatedImage = false;
@@ -69,6 +69,13 @@ void setup() {
 
   if (!TimerCAM.Camera.begin()) {
     logger.error("Camera Init Fail");
+    return;
+  }
+
+  // UXGA base64最大サイズ（~400KB JPEG × 4/3）を PSRAM に確保
+  base64Image = (unsigned char *)ps_malloc(620 * 1024);
+  if (!base64Image) {
+    logger.error("Failed to allocate base64 buffer in PSRAM");
     return;
   }
 
